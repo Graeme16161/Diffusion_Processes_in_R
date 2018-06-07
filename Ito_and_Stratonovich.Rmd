@@ -1,0 +1,142 @@
+---
+title: "Brownian Motion with Ito and Stratonovich"
+author: "Graeme Keleher"
+date: "June 7, 2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Install Packages
+The focus of this demonstration is the "Sim.DiffPrc" package which is designed for simulating diffusion processes. Click the link for full documentation:
+
+https://cran.r-project.org/web/packages/Sim.DiffProc/Sim.DiffProc.pdf
+
+ggplot2 is a package for graphing, tidyr and dplyr are for data manipulation.
+
+```{r message=FALSE, warning=FALSE}
+library(Sim.DiffProc)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+```
+
+#Ito Method Realizations of Basic Browian Motion 
+For basic Brownian motion with the martingale property there is no drift. My choice of 1 as the diffusion coefficent is arbitrary.
+
+```{r}
+#Specify the drift and diffusion coefficents
+f = expression(0)
+g = expression(1)
+
+#Specify desired number of realizations
+number = 50
+
+#Returns an 'snssde1d' object containing realizations of the specified diffusion process 
+Realizations = snssde1d(drift=f,diffusion=g,M=number, type = "ito")
+
+#Returns the final positions of the realizations (i.e. at position t = 1)
+End_Position = as.data.frame(rsde1d(Realizations, at = 1))
+colnames(End_Position) = c("Position")
+
+#Extract the time series' from the 'snssde1d' object and transform to a data frame 
+#to make plotting with ggplot2 possible
+TS =  as.data.frame(Realizations$X)
+```
+
+#Plots For Ito Realizations
+```{r, echo = FALSE, message=FALSE, warning=FALSE}
+
+graph_TS =  mutate(TS,id = row_number()) %>%
+  gather(Realization,value, -id)
+
+graph_TS$id = graph_TS$id/1000
+  
+ggplot(graph_TS,aes(x = id, y = value, color = Realization)) + geom_line() +
+  labs(title = "Ito Method Sample Paths", x = "Time", y = "Displacement")+ theme(legend.position="none")
+
+ggplot(End_Position, aes(Position)) + geom_histogram() +
+  labs(title = "Histogram of Ito Method Realization End Positions", x = "Position at Time T = 1", y = "")
+
+```
+
+#Stratonovich Method Realizations of Basic Browian Motion
+I am replicating the above example with the only change being the method. 
+
+```{r}
+#Specify the drift and diffusion coefficents
+f = expression(0)
+g = expression(1)
+
+#Specify desired number of realizations
+number = 50
+
+#Returns an 'snssde1d' object containing realizations of the specified diffusion process 
+#The type has changed from ito to Stratonovich
+Realizations <- snssde1d(drift=f,diffusion=g,M=number, type = "str")
+
+#Returns the final positions of the realizations (i.e. at position t = 1)
+End_Position <- as.data.frame(rsde1d(Realizations, at = 1))
+colnames(End_Position) = c("Position")
+
+#Extract the time series' from the 'snssde1d' object and transform to a data frame 
+#to make plotting with ggplot2 possible
+TS =  as.data.frame(Realizations$X)
+```
+
+#Plots For Stratonovich Method Realizations
+```{r, echo= FALSE, message=FALSE, warning=FALSE}
+graph_TS =  mutate(TS,id = row_number()) %>%
+  gather(Realization,value, -id)
+
+graph_TS$id = graph_TS$id/1000
+  
+ggplot(graph_TS,aes(x = id, y = value, color = Realization)) + geom_line() +
+  labs(title = "Stratonovich Method Sample Paths", x = "Time", y = "Displacement")+ theme(legend.position="none")
+
+ggplot(End_Position, aes(Position)) + geom_histogram() +
+  labs(title = "Histogram of Stratonovich Method Realization End Positions", x = "Position at Time T = 1", y = "")
+
+```
+
+#Ito Method Realizations of Geometric Browian Motion
+Geometric Brownian motion has drift and diffusion coefficients that are functions of position. Because of this, the process cannot start at zero if we want non-trivial results. 
+
+```{r}
+#Specify the drift and diffusion coefficents
+f = expression(3*x)
+g = expression(.5*x)
+
+#Specify desired number of realizations
+number = 50
+
+#Returns an 'snssde1d' object containing realizations of the specified diffusion process.
+#Note that the x0 value is no longer 0.
+Realizations = snssde1d(drift=f,diffusion=g,M=number, type = "ito", x0 = 1)
+
+#Returns the final positions of the realizations (i.e. at position t = 1)
+End_Position = as.data.frame(rsde1d(Realizations, at = 1))
+colnames(End_Position) = c("Position")
+
+#Extract the time series' from the 'snssde1d' object and transform to a data frame 
+#to make plotting with ggplot2 possible
+TS =  as.data.frame(Realizations$X)
+```
+
+#Plots For Ito Realizations Of Geometric Brownian Motion
+```{r ,echo= FALSE, message=FALSE, warning=FALSE}
+
+graph_TS =  mutate(TS,id = row_number()) %>%
+  gather(Realization,value, -id)
+
+graph_TS$id = graph_TS$id/1000
+  
+ggplot(graph_TS,aes(x = id, y = value, color = Realization)) + geom_line() +
+  labs(title = "Sample Paths of Geometric Brownian Motion", x = "Time", y = "Displacement")+ theme(legend.position="none")
+
+ggplot(End_Position, aes(Position)) + geom_histogram() +
+  labs(title = "Histogram of Geometric Brownian Motion End Positions", x = "Position at Time T = 1", y = "")
+
+```
